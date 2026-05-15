@@ -35,7 +35,7 @@ CachyOS: skip, pake `cachyos-welcome` yang udah include.
 | AUR helper | Install `paru` | Skip (include) |
 | Repos | Chaotic-AUR | Skip |
 | Snapper | Setup limits | Set limits only |
-| NVIDIA | `nvidia` | `nvidia-dkms` |
+| NVIDIA | `nvidia` (auto-detect kernel) | Skip (pre-installed) |
 
 ## What's Included
 

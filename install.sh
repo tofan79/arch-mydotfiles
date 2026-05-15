@@ -319,6 +319,12 @@ install_multimedia() {
 }
 
 install_nvidia() {
+    if [[ "$IS_CACHYOS" == "true" ]]; then
+        log_ok "CachyOS: NVIDIA pre-installed. Skipping."
+        setup_prime_run
+        return 0
+    fi
+
     if is_pkg_installed nvidia-dkms || is_pkg_installed nvidia; then
         log_ok "NVIDIA already installed. Skipping."
         modinfo nvidia &>/dev/null 2>&1 && log_ok "Module loaded" || \
@@ -334,18 +340,18 @@ install_nvidia() {
 
     log_info "Installing NVIDIA drivers..."
 
-    local nvidia_pkg="nvidia"
-    if [[ "$IS_CACHYOS" == "true" ]]; then
-        local kernel=""
-        if pacman -Q linux-cachyos &>/dev/null 2>&1; then
-            kernel="linux-cachyos"
-        elif pacman -Q linux-cachyos-lts &>/dev/null 2>&1; then
-            kernel="linux-cachyos-lts"
-        fi
-        if [[ -n "$kernel" ]]; then
-            nvidia_pkg="nvidia-dkms"
-        fi
+    local kernel=""
+    if pacman -Q linux &>/dev/null 2>&1; then
+        kernel="linux"
+    elif pacman -Q linux-lts &>/dev/null 2>&1; then
+        kernel="linux-lts"
+    elif pacman -Q linux-zen &>/dev/null 2>&1; then
+        kernel="linux-zen"
+    elif pacman -Q linux-hardened &>/dev/null 2>&1; then
+        kernel="linux-hardened"
     fi
+    local nvidia_pkg="${kernel:+"nvidia-${kernel#linux-}"}"
+    nvidia_pkg="${nvidia_pkg:-nvidia}"
 
     pacman_install "$nvidia_pkg" nvidia-utils nvidia-settings
     pacman_install egl-wayland 2>/dev/null || true
