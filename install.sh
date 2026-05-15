@@ -321,7 +321,6 @@ install_multimedia() {
 install_nvidia() {
     if [[ "$IS_CACHYOS" == "true" ]]; then
         log_ok "CachyOS: NVIDIA pre-installed. Skipping."
-        setup_prime_run
         return 0
     fi
 
