@@ -66,9 +66,9 @@ install_apps() {
     local aur_helper
     aur_helper=$(detect_aur_helper)
     if [[ -n "$aur_helper" ]]; then
-        "$aur_helper" -S --needed --noconfirm zen-browser-bin localsend-bin 2>/dev/null || log_warn "AUR packages failed — try manual: paru -S zen-browser-bin localsend-bin"
+        "$aur_helper" -S --needed --noconfirm zen-browser-bin localsend-bin webapp-manager-git 2>/dev/null || log_warn "AUR packages failed — try manual: paru -S zen-browser-bin localsend-bin webapp-manager-git"
     else
-        log_warn "No AUR helper. Install manually: paru -S zen-browser-bin localsend-bin"
+        log_warn "No AUR helper. Install manually: paru -S zen-browser-bin localsend-bin webapp-manager-git"
     fi
 
     log_ok "Core apps installed."
