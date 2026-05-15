@@ -43,9 +43,14 @@ CachyOS: skip, pake `cachyos-welcome` yang udah include.
 - **DM**: SDDM (X11, cursor works)
 - **Shell**: Fish + zoxide + mise
 - **Terminal**: Kitty (default)
-- **Editor**: Neovim
-- **Tools**: Fastfetch, Eza, Bat, FZF, Yazi, Podman
-- **Multimedia**: FFmpeg, PipeWire, codecs
-- **Gaming** (Arch): Steam, Gamemode, Gamescope, MangoHud, Wine
+- **Editor**: Neovim, Zed
 - **Browser**: Zen Browser
 - **File**: Nautilus + LocalSend extension
+- **Multimedia**: FFmpeg, x264/x265, PipeWire, codecs (gst-libav, gst-plugins-*)
+- **Tools**: Fastfetch, Eza, Bat, FZF, Yazi, Btop, Podman, Snapper, Git, Python/Pipx
+- **Utils**: Grim (screenshot), Slurp (region), Brightnessctl, Cliphist, Wlsunset, Imagemagick, JQ
+- **Fonts**: JetBrains Mono + Nerd Font, Font Awesome, Noto
+- **GPU**: Mesa, Vulkan (ICD loader + tools), libva-utils, vdpauinfo
+- **NVIDIA** (Arch): auto-detect kernel module (nvidia/nvidia-lts/etc) + utils
+- **AUR**: Zen Browser, LocalSend, WebApp Manager
+- **Gaming** (Arch): Steam, Gamemode, Gamescope, MangoHud, Wine
