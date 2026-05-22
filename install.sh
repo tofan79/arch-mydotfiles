@@ -85,7 +85,17 @@ install_aur_helper() {
 }
 
 pacman_install() {
-    sudo pacman -S --needed --noconfirm "$@"
+    local pkgs=()
+    for pkg in "$@"; do
+        if pacman -Si "$pkg" &>/dev/null || pacman -Qg "$pkg" &>/dev/null; then
+            pkgs+=("$pkg")
+        else
+            log_warn "Package '$pkg' not found in any repository. Skipping."
+        fi
+    done
+    if [[ ${#pkgs[@]} -gt 0 ]]; then
+        sudo pacman -S --needed --noconfirm --ask 4 "${pkgs[@]}"
+    fi
 }
 
 aur_install() {
@@ -251,7 +261,7 @@ install_packages() {
     local core_pkgs=(
         base-devel git curl wget rsync
         linux-firmware
-        NetworkManager-wifi wpa_supplicant wireless-regdb
+        networkmanager wpa_supplicant wireless-regdb
         mesa vulkan-icd-loader vulkan-tools
         libglvnd
         pipewire pipewire-alsa pipewire-pulse pipewire-jack
@@ -288,6 +298,11 @@ install_packages() {
         core_pkgs+=(linux-headers)
     fi
 
+    if is_pkg_installed jack; then
+        log_info "Replacing jack with pipewire-jack..."
+        sudo pacman -Rdd --noconfirm jack 2>/dev/null || true
+    fi
+
     pacman_install "${core_pkgs[@]}"
 
     if [[ "$IS_CACHYOS" == "true" ]]; then
@@ -296,9 +311,11 @@ install_packages() {
 
     local font_pkgs=(
         ttf-jetbrains-mono ttf-jetbrains-mono-nerd
-        ttf-font-awesome noto-fonts
+        otf-font-awesome noto-fonts
     )
     pacman_install "${font_pkgs[@]}" 2>/dev/null || true
+
+    pacman_install adw-gtk-theme 2>/dev/null || true
 
     pacman_install power-profiles-daemon
 
@@ -491,7 +508,7 @@ install_mangowm() {
         libdisplay-info 2>/dev/null || true
 
     pacman_install \
-        sddm qt6-qtdeclarative qt6-qtsvg qt6-qtquickcontrols2
+        sddm qt6-declarative qt6-svg
 
     log_ok "MangoWM + Noctalia installed."
 
@@ -502,7 +519,7 @@ install_sddm() {
     log_info "Configuring SDDM..."
 
     if ! is_pkg_installed sddm; then
-        pacman_install sddm qt6-qtdeclarative qt6-qtsvg qt6-qtquickcontrols2 || {
+        pacman_install sddm qt6-declarative qt6-svg || {
             log_warn "SDDM installation failed."
             return 0
         }
@@ -583,8 +600,9 @@ copy_dotfiles() {
     mkdir -p ~/.config
 
     local dirs=(
-        fastfetch gtk-3.0 gtk-4.0 kitty mango
-        nvim qt5ct qt6ct yazi zed clean xdg-desktop-portal
+        gtk-3.0 gtk-4.0 kitty mango
+        nvim qt5ct qt6ct yazi zed clean
+        btop xdg-desktop-portal
     )
 
     local backup_dir=""
@@ -634,6 +652,13 @@ copy_wallpapers() {
     log_ok "Wallpapers copied to ${dst}"
 }
 
+copy_user_dirs() {
+    if [[ -f "${DOTFILES_DIR}/user-dirs.dirs" ]]; then
+        cp "${DOTFILES_DIR}/user-dirs.dirs" ~/.config/user-dirs.dirs
+        log_ok "user-dirs.dirs copied."
+    fi
+}
+
 setup_shell() {
     if [[ "$IS_CACHYOS" == "true" ]]; then
         if ! command -v fish &>/dev/null; then
@@ -659,7 +684,12 @@ setup_shell() {
         cp ~/.config/fish/config.fish ~/.config/fish/config.fish.bak.$(date +%Y%m%d) 2>/dev/null || true
     fi
 
-    cat > ~/.config/fish/config.fish << 'FISHEOF'
+    cat > ~/.config/fish/config.fish << FISHEOF
+# Source CachyOS default config if present
+if test -f /usr/share/cachyos-fish-config/cachyos-config.fish
+    source /usr/share/cachyos-fish-config/cachyos-config.fish
+end
+
 if status is-interactive
     # Eza
     alias ls='eza --icons'
@@ -803,8 +833,10 @@ main() {
     install_snapper
     install_mangowm
     install_tela_icon_theme
+    aur_install bibata-cursor-theme-bin 2>/dev/null || log_warn "Bibata cursor not installed."
     copy_dotfiles
     copy_wallpapers
+    copy_user_dirs
     setup_shell
     setup_mise
     set_kitty_default

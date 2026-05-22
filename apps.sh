@@ -37,7 +37,25 @@ detect_os() {
     fi
 }
 
-pacman_install() { sudo pacman -S --needed --noconfirm "$@"; }
+pacman_install() {
+    local pkgs=()
+    for pkg in "$@"; do
+        if pacman -Si "$pkg" &>/dev/null || pacman -Qg "$pkg" &>/dev/null; then
+            pkgs+=("$pkg")
+        else
+            log_warn "Package '$pkg' not found in any repository. Skipping."
+        fi
+    done
+    if [[ ${#pkgs[@]} -gt 0 ]]; then
+        sudo pacman -S --needed --noconfirm --ask 4 "${pkgs[@]}"
+    fi
+}
+
+validate_aur_pkg() {
+    local pkg="$1"
+    local helper="${2:-paru}"
+    "$helper" -Si "$pkg" &>/dev/null
+}
 
 detect_aur_helper() {
     if command -v paru &>/dev/null; then
@@ -61,12 +79,22 @@ install_apps() {
         libmtp gvfs-mtp \
         xdg-desktop-portal-gtk \
         python-gobject \
-        telegram-desktop zed 2>/dev/null || log_warn "Some pacman packages unavailable — skipping"
+        telegram-desktop zed
 
     local aur_helper
     aur_helper=$(detect_aur_helper)
     if [[ -n "$aur_helper" ]]; then
-        "$aur_helper" -S --needed --noconfirm zen-browser-bin localsend-bin webapp-manager-git 2>/dev/null || log_warn "AUR packages failed — try manual: paru -S zen-browser-bin localsend-bin webapp-manager-git"
+        local aur_pkgs=()
+        for pkg in zen-browser-bin localsend-bin webapp-manager-git; do
+            if validate_aur_pkg "$pkg" "$aur_helper"; then
+                aur_pkgs+=("$pkg")
+            else
+                log_warn "AUR package '$pkg' not found. Skipping."
+            fi
+        done
+        if [[ ${#aur_pkgs[@]} -gt 0 ]]; then
+            "$aur_helper" -S --needed --noconfirm "${aur_pkgs[@]}" 2>/dev/null || log_warn "AUR install failed — try manual: paru -S ${aur_pkgs[*]}"
+        fi
     else
         log_warn "No AUR helper. Install manually: paru -S zen-browser-bin localsend-bin webapp-manager-git"
     fi
