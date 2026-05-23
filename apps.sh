@@ -79,12 +79,12 @@ install_apps() {
         libmtp gvfs-mtp \
         xdg-desktop-portal-gtk \
         python-gobject \
-        loupe gnome-epub-thumbnailer glycin-thumbnailer totem-video-thumbnailer \
+        loupe gnome-epub-thumbnailer \
         telegram-desktop zed
 
     pacman_install \
-        tmux ripgrep fd-find tree ncdu httpie net-tools bind-utils \
-        whois traceroute mtr socat nmap p7zip shellcheck \
+        tmux ripgrep fd tree ncdu httpie net-tools bind \
+        whois traceroute mtr socat nmap 7zip shellcheck github-cli \
         valgrind strace ltrace
 
     if command -v podman &>/dev/null; then
@@ -96,7 +96,7 @@ install_apps() {
     aur_helper=$(detect_aur_helper)
     if [[ -n "$aur_helper" ]]; then
         local aur_pkgs=()
-        for pkg in zen-browser-bin localsend-bin nautilus-admin-git; do
+        for pkg in zen-browser-bin localsend-bin nautilus-admin-gtk4; do
             if validate_aur_pkg "$pkg" "$aur_helper"; then
                 aur_pkgs+=("$pkg")
             else
@@ -107,7 +107,7 @@ install_apps() {
             "$aur_helper" -S --needed --noconfirm "${aur_pkgs[@]}" 2>/dev/null || log_warn "AUR install failed — try manual: paru -S ${aur_pkgs[*]}"
         fi
     else
-        log_warn "No AUR helper. Install manually: paru -S zen-browser-bin localsend-bin nautilus-admin-git"
+        log_warn "No AUR helper. Install manually: paru -S zen-browser-bin localsend-bin nautilus-admin-gtk4"
     fi
 
     log_ok "Core apps installed."

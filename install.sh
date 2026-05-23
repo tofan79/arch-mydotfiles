@@ -280,7 +280,7 @@ install_packages() {
         noto-fonts-emoji gtk4
         cmake meson ninja
         smartmontools lsof pciutils usbutils bc tree unzip zip logrotate tcpdump chrony
-        gvfs-afc gvfs-afp gvfs-archive gvfs-fuse gvfs-goa gvfs-gphoto2 gvfs-smb
+        gvfs-afc gvfs-dnssd gvfs-goa gvfs-gphoto2 gvfs-mtp gvfs-smb
         exfatprogs ntfs-3g btrfs-progs cifs-utils dosfstools
         power-profiles-daemon asusctl rog-control-center
         gnome-calculator
@@ -446,21 +446,6 @@ configure_firewalld() {
     fi
 }
 
-install_printing() {
-    log_info "Installing printing stack (CUPS)..."
-    pacman_install \
-        cups cups-filters cups-browsed cups-pk-helper cups-pdf \
-        ghostscript gutenprint gutenprint-cups \
-        hplip colord nss-mdns \
-        system-config-printer system-config-printer-udev \
-        foomatic foomatic-db-ppds \
-        a2ps enscript paps pnm2ppa ptouch-driver splix \
-        samba-client
-
-    sudo systemctl enable --now cups 2>/dev/null || true
-    log_ok "Printing stack installed."
-}
-
 configure_asus() {
     if ! command -v asusctl &>/dev/null; then
         log_warn "asusctl not installed. Skipping ASUS config."
@@ -472,6 +457,8 @@ configure_asus() {
         fi
     done
     sudo systemctl enable --now power-profiles-daemon 2>/dev/null || true
+    sudo mkdir -p /etc/asusd
+    sudo systemctl reset-failed asusd 2>/dev/null || true
     sudo systemctl enable --now asusd 2>/dev/null || true
     log_ok "ASUS TUF configured."
 }
@@ -788,6 +775,11 @@ set_kitty_default() {
 
     sudo ln -sf /usr/bin/kitty /usr/local/bin/x-terminal-emulator 2>/dev/null || true
 
+    if is_pkg_installed alacritty; then
+        sudo pacman -Rns alacritty --noconfirm 2>/dev/null || true
+        log_ok "Alacritty removed (replaced by Kitty)."
+    fi
+
     local kde_desktop_file="/usr/share/applications/org.kde.konsole.desktop"
     if [[ -f "$kde_desktop_file" ]]; then
         sudo mv "$kde_desktop_file" "${kde_desktop_file}.disabled" 2>/dev/null || true
@@ -829,6 +821,10 @@ cleanup() {
         paru -Scc --noconfirm 2>/dev/null || true
     fi
     sudo pacman -Rns "$(pacman -Qtdq 2>/dev/null)" --noconfirm 2>/dev/null || true
+    if is_pkg_installed pavucontrol && ! is_pkg_installed pavucontrol-qt; then
+        sudo pacman -Rns pavucontrol --noconfirm 2>/dev/null || true
+        log_ok "pavucontrol (GTK) removed (pavucontrol-qt used instead)."
+    fi
     log_ok "Cleanup complete."
 }
 
@@ -841,7 +837,6 @@ main() {
     install_multimedia
     install_nvidia
     configure_firewalld
-    install_printing
     configure_asus
     install_mangowm
     install_tela_icon_theme
