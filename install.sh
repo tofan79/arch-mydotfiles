@@ -271,13 +271,19 @@ install_packages() {
         xorg-xwayland
         eza python python-pip python-pipx fastfetch
         kitty
-        neovim bat fzf snapper zoxide
+        neovim bat fzf zoxide
         btop podman podman-docker podman-compose
         acpid
         grim slurp brightnessctl cliphist wlsunset
         imagemagick jq
         libinput libxkbcommon seatd
         noto-fonts-emoji gtk4
+        cmake meson ninja
+        smartmontools lsof pciutils usbutils bc tree unzip zip logrotate tcpdump chrony
+        gvfs-afc gvfs-afp gvfs-archive gvfs-fuse gvfs-goa gvfs-gphoto2 gvfs-smb
+        exfatprogs ntfs-3g btrfs-progs cifs-utils dosfstools
+        power-profiles-daemon asusctl rog-control-center
+        gnome-calculator
     )
 
     if [[ "$IS_CACHYOS" == "true" ]]; then
@@ -311,7 +317,7 @@ install_packages() {
 
     local font_pkgs=(
         ttf-jetbrains-mono ttf-jetbrains-mono-nerd
-        otf-font-awesome noto-fonts
+        ttf-firacode-nerd otf-font-awesome noto-fonts
     )
     pacman_install "${font_pkgs[@]}" 2>/dev/null || true
 
@@ -440,41 +446,34 @@ configure_firewalld() {
     fi
 }
 
-install_snapper() {
-    if ! findmnt -n -o FSTYPE / | grep -q btrfs; then
-        log_warn "Root filesystem is not BTRFS. Skipping snapper."
+install_printing() {
+    log_info "Installing printing stack (CUPS)..."
+    pacman_install \
+        cups cups-filters cups-browsed cups-pk-helper cups-pdf \
+        ghostscript gutenprint gutenprint-cups \
+        hplip colord nss-mdns \
+        system-config-printer system-config-printer-udev \
+        foomatic foomatic-db-ppds \
+        a2ps enscript paps pnm2ppa ptouch-driver splix \
+        samba-client
+
+    sudo systemctl enable --now cups 2>/dev/null || true
+    log_ok "Printing stack installed."
+}
+
+configure_asus() {
+    if ! command -v asusctl &>/dev/null; then
+        log_warn "asusctl not installed. Skipping ASUS config."
         return 0
     fi
-
-    if ! command -v snapper &>/dev/null; then
-        log_warn "Snapper not installed. Skipping."
-        return 0
-    fi
-
-    if snapper list-configs 2>/dev/null | grep -q "^root"; then
-        log_ok "Snapper config 'root' already exists."
-    else
-        sudo snapper -c root create-config / 2>/dev/null || \
-            log_warn "Snapper config might already exist."
-        log_ok "Snapper root config created."
-    fi
-
-    log_info "Setting snapper limits (max 10 total)..."
-    sudo snapper -c root set-config \
-        NUMBER_LIMIT=10 \
-        NUMBER_LIMIT_IMPORTANT=5 \
-        TIMELINE_CREATE=yes \
-        TIMELINE_CLEANUP=yes \
-        TIMELINE_LIMIT_HOURLY=3 \
-        TIMELINE_LIMIT_DAILY=7 \
-        TIMELINE_LIMIT_WEEKLY=0 \
-        TIMELINE_LIMIT_MONTHLY=0 \
-        TIMELINE_LIMIT_YEARLY=0
-
-    sudo systemctl enable --now snapper-timeline.timer
-    sudo systemctl enable --now snapper-cleanup.timer
-
-    log_ok "Snapper configured. Max 10 snapshots."
+    for svc in tlp auto-cpufreq tuned; do
+        if systemctl is-active "${svc}.service" &>/dev/null 2>&1; then
+            sudo systemctl disable --now "${svc}.service" || true
+        fi
+    done
+    sudo systemctl enable --now power-profiles-daemon 2>/dev/null || true
+    sudo systemctl enable --now asusd 2>/dev/null || true
+    log_ok "ASUS TUF configured."
 }
 
 install_mangowm() {
@@ -600,9 +599,9 @@ copy_dotfiles() {
     mkdir -p ~/.config
 
     local dirs=(
-        gtk-3.0 gtk-4.0 kitty mango
-        nvim qt5ct qt6ct yazi zed clean
-        btop xdg-desktop-portal
+        btop clean fish gtk-3.0 gtk-4.0 kitty mango
+        noctalia nvim qt5ct qt6ct telegram-desktop
+        xdg-desktop-portal yazi zed zen
     )
 
     local backup_dir=""
@@ -657,6 +656,18 @@ copy_user_dirs() {
         cp "${DOTFILES_DIR}/user-dirs.dirs" ~/.config/user-dirs.dirs
         log_ok "user-dirs.dirs copied."
     fi
+}
+
+copy_docker_db() {
+    local src="${SCRIPT_DIR}/docker-db"
+    local dst="${HOME}/Projects/docker-db"
+    if [[ ! -d "$src" ]]; then
+        log_warn "docker-db directory not found. Skipping."
+        return 0
+    fi
+    mkdir -p "$dst"
+    cp -r "${src}"/* "$dst/"
+    log_ok "docker-db copied to ${dst}"
 }
 
 setup_shell() {
@@ -830,13 +841,15 @@ main() {
     install_multimedia
     install_nvidia
     configure_firewalld
-    install_snapper
+    install_printing
+    configure_asus
     install_mangowm
     install_tela_icon_theme
     aur_install bibata-cursor-theme-bin 2>/dev/null || log_warn "Bibata cursor not installed."
     copy_dotfiles
     copy_wallpapers
     copy_user_dirs
+    copy_docker_db
     setup_shell
     setup_mise
     set_kitty_default

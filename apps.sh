@@ -72,20 +72,31 @@ install_apps() {
 
     pacman_install \
         nautilus nautilus-python yazi mpv imv \
-        gnome-disk-utility \
-        pavucontrol \
+        gnome-disk-utility gnome-font-viewer \
+        pavucontrol-qt \
         tesseract tesseract-data-eng \
         imagemagick ffmpeg \
         libmtp gvfs-mtp \
         xdg-desktop-portal-gtk \
         python-gobject \
+        loupe gnome-epub-thumbnailer glycin-thumbnailer totem-video-thumbnailer \
         telegram-desktop zed
+
+    pacman_install \
+        tmux ripgrep fd-find tree ncdu httpie net-tools bind-utils \
+        whois traceroute mtr socat nmap p7zip shellcheck \
+        valgrind strace ltrace
+
+    if command -v podman &>/dev/null; then
+        systemctl --user enable --now podman.socket 2>/dev/null || true
+        log_ok "podman socket enabled"
+    fi
 
     local aur_helper
     aur_helper=$(detect_aur_helper)
     if [[ -n "$aur_helper" ]]; then
         local aur_pkgs=()
-        for pkg in zen-browser-bin localsend-bin webapp-manager-git; do
+        for pkg in zen-browser-bin localsend-bin nautilus-admin-git; do
             if validate_aur_pkg "$pkg" "$aur_helper"; then
                 aur_pkgs+=("$pkg")
             else
@@ -96,7 +107,7 @@ install_apps() {
             "$aur_helper" -S --needed --noconfirm "${aur_pkgs[@]}" 2>/dev/null || log_warn "AUR install failed — try manual: paru -S ${aur_pkgs[*]}"
         fi
     else
-        log_warn "No AUR helper. Install manually: paru -S zen-browser-bin localsend-bin webapp-manager-git"
+        log_warn "No AUR helper. Install manually: paru -S zen-browser-bin localsend-bin nautilus-admin-git"
     fi
 
     log_ok "Core apps installed."
@@ -185,12 +196,16 @@ fix_terminal_desktop() {
     for app in "${apps[@]}"; do
         local src="/usr/share/applications/${app}.desktop"
         local dst="$HOME/.local/share/applications/${app}.desktop"
-        if [[ -f "$src" ]] && ! grep -q "kitty" "$dst" 2>/dev/null; then
-            cp "$src" "$dst"
-            sed -i 's|^Exec=\(.*\)$|Exec=kitty -e \1|' "$dst"
-            sed -i 's/^Terminal=true/Terminal=false/' "$dst"
-            log_ok "Fixed desktop: ${app} (kitty)"
+        if [[ ! -f "$src" ]]; then
+            log_warn "Source desktop not found: ${src}"
+            continue
         fi
+        if grep -q "kitty" "$dst" 2>/dev/null; then
+            continue
+        fi
+        cp "$src" "$dst"
+        sed -i 's|^Exec=\(.*\)$|Exec=kitty -e \1|; s/^Terminal=true/Terminal=false/' "$dst"
+        log_ok "Fixed desktop: ${app} (kitty)"
     done
 }
 
