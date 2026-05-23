@@ -10,7 +10,7 @@ Dotfiles + install scripts for Arch Linux and CachyOS (no DE edition).
 
 ```
 arch-mydotfiles/
-├── install.sh                # — System, codec, printing, ASUS, WM, shell
+├── install.sh                # — System, codec, ASUS, WM, shell
 ├── apps.sh                   # — Aplikasi harian + dev tools
 ├── gaming.sh                 # — Gaming stack (Arch only, CachyOS auto-skip)
 ├── dotfiles/                 # Config files (~/.config/)
@@ -49,7 +49,7 @@ CachyOS: `gaming.sh` skip otomatis — gaming packages sudah include via `cachyo
 
 ### install.sh
 
-Preflight → mirrors/pacman → repos → packages → codecs → NVIDIA → firewalld → printing → ASUS → MangoWM → dotfiles → shell → cleanup.
+Preflight → mirrors/pacman → repos → packages → codecs → NVIDIA → firewalld → ASUS → MangoWM → dotfiles → shell → cleanup.
 
 #### Arch vs CachyOS
 
@@ -97,9 +97,7 @@ ffmpeg, x264, x265, libdvdcss, gst-libav, gst-plugins-good, gst-plugins-bad, gst
 
 ttf-jetbrains-mono, ttf-jetbrains-mono-nerd, ttf-firacode-nerd, otf-font-awesome, noto-fonts, noto-fonts-emoji
 
-#### Printing Stack
-
-cups, cups-filters, cups-browsed, cups-pk-helper, cups-pdf, ghostscript, gutenprint, gutenprint-cups, hplip, colord, nss-mdns, system-config-printer, system-config-printer-udev, foomatic, foomatic-db-ppds, a2ps, enscript, paps, pnm2ppa, ptouch-driver, splix, samba-client
+> **Printer:** Install via CachyOS Package Installer (GUI) — tidak termasuk di script.
 
 #### ASUS TUF
 
@@ -149,7 +147,7 @@ Semua config di `dotfiles/` dicopy ke `~/.config/`. Backup otomatis config lama 
 | **Media** | mpv, imv, pavucontrol-qt, loupe, tesseract + tesseract-data-eng, ImageMagick |
 | **Chat** | telegram-desktop |
 | **Editor** | zed |
-| **Thumbnailer** | gnome-epub-thumbnailer, totem-video-thumbnailer, glycin-thumbnailer |
+| **Thumbnailer** | gnome-epub-thumbnailer |
 | **Browser** | zen-browser-bin (AUR) |
 | **Transfer** | localsend-bin (AUR) |
 | **Portal** | xdg-desktop-portal-gtk, python-gobject |
@@ -159,12 +157,13 @@ Semua config di `dotfiles/` dicopy ke `~/.config/`. Backup otomatis config lama 
 | Kategori | Packages |
 |----------|----------|
 | **Editor/Shell** | tmux |
-| **Search** | ripgrep, fd-find |
+| **Search** | ripgrep, fd |
 | **Monitor** | tree, ncdu |
-| **Network** | httpie, net-tools, bind-utils, whois, traceroute, mtr, socat, nmap |
-| **Compress** | p7zip |
+| **Network** | httpie, net-tools, bind, whois, traceroute, mtr, socat, nmap |
+| **Compress** | 7zip |
 | **Lint** | shellcheck |
 | **Debug** | valgrind, strace, ltrace |
+| **Git** | github-cli |
 
 #### Nautilus LocalSend
 
